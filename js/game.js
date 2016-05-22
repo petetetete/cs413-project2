@@ -1,6 +1,12 @@
 // Set up some size variables for easy changing
 var width = 1024, height = 576, mapWidth = 768, mapHeight = 576;
 
+// Some global variables that can be adjusted
+var gravity = .15, bounce = .4, jumpFieldSpeed = 7, stopTime = 2000, collisionBuffer = 0.5;
+
+var currScreen;
+
+var playing = false;
 
 // Object holding all of the game textures
 var textures = {};
@@ -17,11 +23,6 @@ var backgrounds = {};
 
 // Object holding the prisoner and information about him
 var prisoner = {};
-
-
-// Some global variables that can be adjusted
-var gravity = .1, bounce = .3, jumpFieldSpeed = 7, stopTime = 2000, collisionBuffer = 0.5;
-
 
 // Grab gameport from the html
 var gameport = document.getElementById("gameport");
@@ -66,6 +67,7 @@ function initTextures() {
 
 function drawScreen(screenIndex) {
 
+	currScreen = screenIndex;
 	screen = stage.getChildAt(screenIndex);
 
 	for (element in screenLayouts[screenIndex]) {
@@ -96,6 +98,7 @@ function drawScreen(screenIndex) {
 
 		if (elem.type === "object") {
 			objects[element] = {"sprite": new PIXI.Sprite(textures[elem.texture])};
+			if (elem.secondTexture) objects[element].secondTexture = elem.secondTexture;
 			objects[element].sprite.width = elem.width;
 			objects[element].sprite.height = elem.height;
 			objects[element].sprite.position.x = elem.x;
@@ -103,9 +106,10 @@ function drawScreen(screenIndex) {
 			objects[element].dx = elem.dx;
 			objects[element].dy = elem.dx;
 			objects[element].type = elem.subtype;
+			objects[element].draggable = elem.draggable;
 			screen.getChildAt(1).addChild(objects[element].sprite);
 
-			if (elem.draggable) {
+			if (objects[element].draggable) {
 				objects[element].sprite.interactive = true;
 				objects[element].sprite.on('mousedown', onDragStart);
 				objects[element].sprite.on('mouseup', onDragEnd);
@@ -114,6 +118,18 @@ function drawScreen(screenIndex) {
 			}
 		}
 	}
+}
+
+function resetPrisoner() {
+	playing = false;
+	prisoner.sprite.position.x = screenLayouts[currScreen]["prisoner"].x;
+	prisoner.sprite.position.y = screenLayouts[currScreen]["prisoner"].y;
+}
+
+function startPrisoner() {
+	playing = true;
+	prisoner.dx = screenLayouts[currScreen]["prisoner"].dx;
+	prisoner.dy = screenLayouts[currScreen]["prisoner"].dy;
 }
 
 function updatePrisoner() {
@@ -150,33 +166,6 @@ function updatePrisoner() {
 	}
 
 	prisoner.dy += gravity;
-}
-
-// Functions used for moving 
-function onDragStart(e)
-{
-	this.diffX = e.data.global.x - this.position.x;
-	this.diffY = e.data.global.y - this.position.y;
-	this.data = e.data;
-	this.dragging = true;
-}
-
-function onDragEnd() {
-	this.dragging = false;
-	this.data = null;
-}
-
-function onDragMove () {
-	if (this.dragging) {
-		move = this.data.getLocalPosition(this.parent);
-		this.position.x = move.x - this.diffX;
-		this.position.y = move.y - this.diffY;
-
-		if (this.position.x < 0) this.position.x = 0;
-		if (this.position.x + this.width > mapWidth) this.position.x = mapWidth-this.width;
-		if (this.position.y < 0) this.position.y = 0;
-		if (this.position.y + this.height > mapHeight) this.position.y = mapHeight-this.height;
-	}
 }
 
 function checkPrisonerCollision() {
@@ -234,16 +223,78 @@ function checkPrisonerCollision() {
 				// This is used to remove the sprite if you don't want to just change it
 				// objectsContainer.removeChild(obj.sprite);
 				delete objects[object];
-				setTimeout(function() { prisoner.dx = sdx; currobj.sprite.texture = textures.bluecircle; }, stopTime);
+				setTimeout(function() { prisoner.dx = sdx; currobj.sprite.texture = textures[currobj.secondTexture]; }, stopTime);
+			}
+			// Check if the prisoner has collided with the exit
+			else if (obj.type === "exit") {
+				console.log("exited!");
 			}
 		}
 
 	}
 }
 
+// Functions used for moving 
+function onDragStart(e)
+{
+	// Get current object being dragged
+	for (obj in objects) {
+		if (objects[obj].sprite === this) {
+			currObj = obj;
+		}
+	}
+
+	// Save the starting coordinates of the box
+	if (e.data.global.x > mapWidth) {
+		saveX = this.position.x;
+		saveY = this.position.y;
+	}
+	
+	this.diffX = e.data.global.x - this.position.x;
+	this.diffY = e.data.global.y - this.position.y;
+	this.data = e.data;
+	this.dragging = true;
+}
+
+function onDragEnd() {
+	this.dragging = false;
+	this.data = null;
+}
+
+function onDragMove () {
+	if (this.dragging) {
+
+		move = this.data.getLocalPosition(this.parent);
+
+		this.position.x = move.x - this.diffX;
+		this.position.y = move.y - this.diffY;
+
+		if (objects[currObj].type === "jumpfield" || objects[currObj].type === "stop") {
+			for (obj in objects) {
+				o = objects[obj];
+				if (o.draggable) break;
+				this.position.y = (move.y <= o.sprite.position.y + o.sprite.height && move.x > o.sprite.position.x && move.x < o.sprite.position.x + o.sprite.width) ? o.sprite.position.y - this.height : mapHeight - this.height;
+			}
+		}
+
+		if (move.x > mapWidth) {
+			this.position.x = saveX;
+			this.position.y = saveY;
+		}
+		else {
+			if (this.position.x < 0) this.position.x = 0;
+			if (this.position.x + this.width > mapWidth) this.position.x = mapWidth-this.width;
+			if (this.position.y < 0) this.position.y = 0;
+			if (this.position.y + this.height > mapHeight) this.position.y = mapHeight-this.height;
+		}
+	}
+}
+
 function animate() {
-    requestAnimationFrame(animate);
-    updatePrisoner();
-    checkPrisonerCollision();
-    renderer.render(stage);
+	requestAnimationFrame(animate);
+	if (playing) {
+		updatePrisoner();
+		checkPrisonerCollision();
+	}
+	renderer.render(stage);
 }

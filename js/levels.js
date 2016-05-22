@@ -14,8 +14,8 @@ var screenLayouts = {
 		"prisoner": {
 			"type": "prisoner",
 			"x": 10,
-			"y": 450,
-			"dx": 2,
+			"y": 476,
+			"dx": 2.5,
 			"dy": 0,
 			"width": 50,
 			"height": 100,
@@ -36,13 +36,26 @@ var screenLayouts = {
 		"jumpy": {
 			"type": "object",
 			"subtype": "jumpfield",
-			"x": 300,
-			"y": 551,
+			"x": 800,
+			"y": 50,
 			"dx": 0,
 			"dy": 0,
 			"width": 50,
 			"height": 25,
 			"texture": "testGrey",
+			"draggable": true
+		},
+		"stop": {
+			"type": "object",
+			"subtype": "stop",
+			"x": 950,
+			"y": 50,
+			"dx": 0,
+			"dy": 0,
+			"width": 50,
+			"height": 25,
+			"texture": "testGrey",
+			"secondTexture": "testBlue",
 			"draggable": true
 		},
 	}
