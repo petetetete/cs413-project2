@@ -16,6 +16,7 @@ var freedPrisoners = [false, false, false];
 
 // Object holding all of the game textures
 var textures = {};
+var sounds = {};
 
 // Object to store backgrounds, not sure if they'll be relevant
 var backgrounds = {};
@@ -25,6 +26,7 @@ var backgrounds = {};
 //  - wall: just bounced off of
 //  - jumpfield: field that will accelerate the player upwards
 //  - exit: 
+//  - guard:
 var objects = {};
 
 // Object holding the prisoner and information about him
@@ -66,6 +68,7 @@ stage.addChildAt(secondLC,4);
 PIXI.SCALE_MODES.DEFAULT = PIXI.SCALE_MODES.NEAREST;
 
 // PIXI.loader.add("sprites.json").load(ready);
+PIXI.loader.add("assets/paper.mp3");
 PIXI.loader.add("assets/spritesheet.json").load(initTextures);
 
 function initTextures() {
@@ -89,6 +92,9 @@ function initTextures() {
 	textures["turn"] = PIXI.Texture.fromFrame("turn.png");
 	textures["paper"] = PIXI.Texture.fromFrame("paper.png");
 	textures["highlight"] = PIXI.Texture.fromFrame("highlight.png");
+	textures["highlightRect"] = PIXI.Texture.fromFrame("highlight-rect.png");
+
+	sounds["paper"] = PIXI.audioManager.getAudio("assets/paper.mp3");
 
 	drawScreen(0);
 	animate();
@@ -134,7 +140,6 @@ function drawScreen(screenIndex) {
 
 	for (element in screenLayouts[screenIndex]) {
 		elem = screenLayouts[screenIndex][element];
-		console.log(elem);
 
 		condition = (elem.conditional) ? eval(elem.conditional) : true;
 
@@ -355,6 +360,11 @@ function checkPrisonerCollision() {
 				playing = false;
 				console.log("victory");
 				setTimeout(function() { changeScreen(2) }, 2000);
+			}
+			else if (obj.type === "tutorialexit") {
+				playing = false;
+				console.log("victory");
+				setTimeout(function() { progressTutorial() }, 2000);
 			}
 			// Check if the prisoner hit a guard
 			else if (obj.type === "guard") {
