@@ -52,6 +52,8 @@ var secondLC = new PIXI.Container();
 stage.addChildAt(secondLC,4);
 var thirdLC = new PIXI.Container();
 stage.addChildAt(thirdLC,5);
+var credits = new PIXI.Container();
+stage.addChildAt(credits,6);
 
 // Ensure scaling doesn't caus anti-aliasing
 PIXI.SCALE_MODES.DEFAULT = PIXI.SCALE_MODES.NEAREST;
