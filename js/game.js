@@ -2,104 +2,126 @@
 var width = 1024, height = 576, mapWidth = 768, mapHeight = 576;
 
 // Some global variables that can be adjusted
-var gravity = .15, bounce = .4, jumpFieldSpeed = 8, stopTime = 2000, collisionBuffer = 0.5, screenChangeTime = 1000, easeType = createjs.Ease.quadInOut;
+var gravity = .15, bounce = .4, jumpFieldSpeed = 8, stopTime = 2000, collisionBuffer = 0.5, screenChangeTime = 1000, easeType = createjs.Ease.quadInOut, musicVolume = 0.20, musicToggle = false;
 
-var currScreen;
-
+// Some global game state tracking variables
 var playing = false;
-
+var tutorialPhase = 0;
+var freedPrisoners = [false, false, false];
+var currScreen;
 var screenLayouts;
 
-var tutorialPhase = 0;
-
-var freedPrisoners = [false, false, false];
-
-// Object holding all of the game textures
+// Object holding game info
 var textures = {};
 var sounds = {};
-
-// Object to store backgrounds, not sure if they'll be relevant
 var backgrounds = {};
-
-// Object holding all of the game objects
-// types:
-//  - wall: just bounced off of
-//  - jumpfield: field that will accelerate the player upwards
-//  - exit: 
-//  - guard:
 var objects = {};
-
-// Object holding the prisoner and information about him
 var prisoner = {};
-
 var overlays = {};
-
-// Object holding all text objects
 var texts = {};
 
 // Grab gameport from the html
 var gameport = document.getElementById("gameport");
 
 // Create and add renderer to the gameport
-var renderer = new PIXI.autoDetectRenderer(width, height, {backgroundColor: 0x99D5FF});
+var renderer = new PIXI.autoDetectRenderer(width, height, {backgroundColor: 0x000});
 gameport.appendChild(renderer.view);
 
 // Create the main stage
 var stage = new PIXI.Container();
 
-// Create the container for each screen here
+// Create temporary loading text
+ltext = new PIXI.Text("Loading...",{font: "30px Arial", fill: "#fff"});
+ltext.position.x = 20;
+ltext.position.y = 530;
+stage.addChildAt(ltext, 0);
+renderer.render(stage);
+renderer.backgroundColor = 0x5d686e;
+stage.removeChildAt(0);
+
+// Create the main container for each screen here
 var introC = new PIXI.Container();
 stage.addChildAt(introC,0);
-
 var tutorialC = new PIXI.Container();
 stage.addChildAt(tutorialC,1);
-
 var mainMenu = new PIXI.Container();
 stage.addChildAt(mainMenu,2);
-
 var firstLC = new PIXI.Container();
 stage.addChildAt(firstLC,3);
-
 var secondLC = new PIXI.Container();
 stage.addChildAt(secondLC,4);
-
+var thirdLC = new PIXI.Container();
+stage.addChildAt(thirdLC,5);
 
 // Ensure scaling doesn't caus anti-aliasing
 PIXI.SCALE_MODES.DEFAULT = PIXI.SCALE_MODES.NEAREST;
 
-// PIXI.loader.add("sprites.json").load(ready);
+// Add game assets to the loader
 PIXI.loader.add("assets/paper.mp3");
-PIXI.loader.add("assets/spritesheet.json").load(initTextures);
+PIXI.loader.add("assets/victory.mp3");
+PIXI.loader.add("assets/defeat.mp3");
+PIXI.loader.add("assets/music1.mp3");
+PIXI.loader.add("assets/music2.mp3");
+PIXI.loader.add("assets/spritesheet.json").load(initGame);
 
-function initTextures() {
-	// Add all textures to texture object
-	textures["testBlack"] = PIXI.Texture.fromFrame("test-black.png");
-	textures["testBlue"] = PIXI.Texture.fromFrame("test-blue.png");
-	textures["testGrey"] = PIXI.Texture.fromFrame("test-grey.png");
-	textures["testRed"] = PIXI.Texture.fromFrame("test-red.png");
-
+function initGame() {
+	// Add all textures to the global texture object
 	textures["intro"] = PIXI.Texture.fromFrame("intro.png");
+
+	textures["gameBackground"] = PIXI.Texture.fromFrame("game-background.png");
+	textures["itemBackground"] = PIXI.Texture.fromFrame("item-background.png");
+	textures["playButton"] = PIXI.Texture.fromFrame("play.png");
+	textures["resetButton"] = PIXI.Texture.fromFrame("restart.png");
+
 	textures["blaine"] = PIXI.Texture.fromFrame("blaine.png");
 	textures["jerry"] = PIXI.Texture.fromFrame("jerry.png");
-	textures["mainmenu"] = PIXI.Texture.fromFrame("main-menu.png");
-	textures["menuprisoner1"] = PIXI.Texture.fromFrame("menu-prisoner1.png");
-	textures["prisoner1"] = PIXI.Texture.fromFrame("prisoner1.png");
 	textures["textbubbleL"] = PIXI.Texture.fromFrame("textbubble-l.png");
 	textures["textbubbleM"] = PIXI.Texture.fromFrame("textbubble-m.png");
 	textures["textbubbleS"] = PIXI.Texture.fromFrame("textbubble-s.png");
-	textures["black"] = PIXI.Texture.fromFrame("black.png");
-	textures["jumppad"] = PIXI.Texture.fromFrame("jump-pad.png");
-	textures["turn"] = PIXI.Texture.fromFrame("turn.png");
 	textures["paper"] = PIXI.Texture.fromFrame("paper.png");
 	textures["highlight"] = PIXI.Texture.fromFrame("highlight.png");
 	textures["highlightRect"] = PIXI.Texture.fromFrame("highlight-rect.png");
 
-	sounds["paper"] = PIXI.audioManager.getAudio("assets/paper.mp3");
+	textures["jumppad"] = PIXI.Texture.fromFrame("jump-pad.png");
+	textures["turn"] = PIXI.Texture.fromFrame("turn.png");
+	textures["turnDown"] = PIXI.Texture.fromFrame("turn-down.png");
+	textures["stop"] = PIXI.Texture.fromFrame("stop.png");
 
+	textures["wall"] = PIXI.Texture.fromFrame("wall.png");
+	textures["exit"] = PIXI.Texture.fromFrame("exit.png");
+	textures["exitClosed"] = PIXI.Texture.fromFrame("exit-closed.png");
+	textures["guard"] = PIXI.Texture.fromFrame("guard.png");
+	textures["guardFlipped"] = PIXI.Texture.fromFrame("guard-flipped.png");
+
+	textures["mainmenu"] = PIXI.Texture.fromFrame("main-menu.png");
+	textures["menuprisoner1"] = PIXI.Texture.fromFrame("menu-prisoner1.png");
+	textures["prisoner1"] = PIXI.Texture.fromFrame("prisoner1.png");
+	textures["prisoner1Flipped"] = PIXI.Texture.fromFrame("prisoner1-flipped.png");
+	textures["menuprisoner2"] = PIXI.Texture.fromFrame("menu-prisoner2.png");
+	textures["prisoner2"] = PIXI.Texture.fromFrame("prisoner2.png");
+	textures["prisoner2Flipped"] = PIXI.Texture.fromFrame("prisoner2-flipped.png");
+	textures["menuprisoner3"] = PIXI.Texture.fromFrame("menu-prisoner3.png");
+	textures["prisoner3"] = PIXI.Texture.fromFrame("prisoner3.png");
+	textures["prisoner3Flipped"] = PIXI.Texture.fromFrame("prisoner3-flipped.png");
+	
+	textures["black"] = PIXI.Texture.fromFrame("black.png");
+	textures["blank"] = PIXI.Texture.fromFrame("blank.png");
+
+	sounds["paper"] = PIXI.audioManager.getAudio("assets/paper.mp3");
+	sounds["victory"] = PIXI.audioManager.getAudio("assets/victory.mp3");
+	sounds["defeat"] = PIXI.audioManager.getAudio("assets/defeat.mp3");
+
+	sounds["music1"] = PIXI.audioManager.getAudio("assets/music1.mp3");
+	sounds["music2"] = PIXI.audioManager.getAudio("assets/music2.mp3");
+	sounds.music1.volume = musicVolume;
+	sounds.music2.volume = musicVolume;
+
+	// Kick off game
 	drawScreen(0);
 	animate();
 }
 
+// Function used to transition between screens
 function changeScreen(screenIndex) {
 	direction = (currScreen < screenIndex) ? 1 : -1;
 	createjs.Tween.get(stage.getChildAt(currScreen)).to({x:(-width*direction)}, screenChangeTime, easeType);
@@ -108,41 +130,42 @@ function changeScreen(screenIndex) {
 	createjs.Tween.get(stage.getChildAt(screenIndex)).to({x:0}, screenChangeTime, easeType);
 }
 
+// Function used to redraw each screen when accessed
 function drawScreen(screenIndex) {
 
+	// Erase the incoming stage of any fragments left from previous activities
+	// In a perfect world, this would purge pages after they've been transitioned away from
 	while(stage.getChildAt(screenIndex).children[0]) {
 		stage.getChildAt(screenIndex).removeChild(stage.getChildAt(screenIndex).children[0]);
 	}
 
+	// Reset the global objects
 	backgrounds = {};
 	objects = {};
 	prisoner = {};
 	overlays = {};
 	texts = {};
 
+	// Create the sub-containers for each element to go into later
 	currScreen = screenIndex;
 	screen = stage.getChildAt(screenIndex);
-
 	currBG = new PIXI.Container();
 	screen.addChildAt(currBG,0);
-
 	currObjs = new PIXI.Container();
 	screen.addChildAt(currObjs,1);
-
 	currPrisoner = new PIXI.Container();
 	screen.addChildAt(currPrisoner,2);
-
 	currOver = new PIXI.Container();
 	screen.addChildAt(currOver,3);
-
 	currTexts = new PIXI.Container();
 	screen.addChildAt(currTexts,4);
 
+	// Iterate through the layout designation
 	for (element in screenLayouts[screenIndex]) {
 		elem = screenLayouts[screenIndex][element];
 
+		// Parse and respond to the screenLayouts variable declared in level.js
 		condition = (elem.conditional) ? eval(elem.conditional) : true;
-
 		if (elem.type === "background" && condition) {
 			backgrounds[element] = {"sprite": new PIXI.Sprite(textures[elem.texture])};
 			if (elem.flipped) backgrounds[element].sprite.scale.x = -1;
@@ -161,7 +184,8 @@ function drawScreen(screenIndex) {
 			screen.getChildAt(0).addChild(backgrounds[element].sprite);
 		}
 		else if (elem.type === "object" && condition) {
-			objects[element] = {"sprite": new PIXI.Sprite(textures[elem.texture])};
+			if (elem.tiling) objects[element] = {"sprite": new PIXI.extras.TilingSprite(textures[elem.texture], elem.width, elem.height)};
+			else objects[element] = {"sprite": new PIXI.Sprite(textures[elem.texture])};
 			if (elem.secondTexture) objects[element].secondTexture = elem.secondTexture;
 			if (elem.flipped) objects[element].sprite.scale.x = -1;
 			objects[element].sprite.width = elem.width;
@@ -201,6 +225,8 @@ function drawScreen(screenIndex) {
 				prisoner.sprite.interactive = true;
 				prisoner.sprite.on("mousedown", parseInput);
 			}
+			prisoner.forwardTexture = elem.texture;
+			prisoner.backwardTexture = elem.secondTexture;
 			prisoner.dx = elem.dx;
 			prisoner.dy = elem.dy;
 			screen.addChildAt(prisoner.sprite,2);
@@ -228,7 +254,8 @@ function drawScreen(screenIndex) {
 				ww = (elem.wordWrap) ? true : false;
 				wwww = (elem.wordWrap) ? elem.wordWrap : 0;
 				lh = (elem.lineHeight) ? elem.lineHeight : 0;
-				texts[element] = {"text": new PIXI.Text(elem.text,{font: elem.font, fill: elem.color, align : elem.align, wordWrap: ww, wordWrapWidth: wwww, lineHeight: lh })};
+				stroke = (elem.stroke) ? elem.stroke : 0;
+				texts[element] = {"text": new PIXI.Text(elem.text,{font: elem.font, fill: elem.color, align : elem.align, wordWrap: ww, wordWrapWidth: wwww, lineHeight: lh, strokeThickness: stroke })};
 				if (elem.width) texts[element].text.width = elem.width;
 				if (elem.height) texts[element].text.height = elem.height;
 				texts[element].text.position.x = elem.x;
@@ -239,28 +266,32 @@ function drawScreen(screenIndex) {
 	}
 }
 
+// Simple function used to parse the targets for clickable elements
 function parseInput() {
 	eval(this.target);
 }
 
+// Function used to progress through the tutorial screens
 function progressTutorial() {
 	++tutorialPhase;
-	drawScreen(currScreen);
+	if (tutorialPhase === 16) changeScreen(2);
+	else drawScreen(currScreen);
 }
 
+// Function used to reset the prisoner when pressed
 function resetPrisoner() {
 	playing = false;
 	drawScreen(currScreen);
-	prisoner.sprite.position.x = screenLayouts[currScreen]["prisoner"].x;
-	prisoner.sprite.position.y = screenLayouts[currScreen]["prisoner"].y;
 }
 
+// Function used to start moving the prisoner
 function startPrisoner() {
 	playing = true;
 	prisoner.dx = screenLayouts[currScreen]["prisoner"].dx;
 	prisoner.dy = screenLayouts[currScreen]["prisoner"].dy;
 }
 
+// Function called repeatedly to update the prisoners location
 function updatePrisoner() {
 	px = prisoner.sprite.position.x;
 	py = prisoner.sprite.position.y;
@@ -294,9 +325,13 @@ function updatePrisoner() {
 		prisoner.sprite.position.y = mapHeight - ph;
 	}
 
+	if (prisoner.dx >= 0) prisoner.sprite.texture = textures[prisoner.forwardTexture];
+	else prisoner.sprite.texture = textures[prisoner.backwardTexture];
+
 	prisoner.dy += gravity;
 }
 
+// Function also used in conjunction with update prisoner to check if he's hit anything
 function checkPrisonerCollision() {
 
 	// Check every object
@@ -349,8 +384,6 @@ function checkPrisonerCollision() {
 				currobj = obj;
 				sdx = prisoner.dx;
 				prisoner.dx = 0;
-				// This is used to remove the sprite if you don't want to just change it
-				// objectsContainer.removeChild(obj.sprite);
 				delete objects[object];
 				setTimeout(function() { prisoner.dx = sdx; currobj.sprite.texture = textures[currobj.secondTexture]; }, stopTime);
 			}
@@ -358,17 +391,20 @@ function checkPrisonerCollision() {
 			else if (obj.type === "exit") {
 				freedPrisoners[currScreen-3] = true;
 				playing = false;
-				console.log("victory");
-				setTimeout(function() { changeScreen(2) }, 2000);
+				prisoner.sprite.visible = false;
+				setTimeout(function() { changeScreen(2) }, 1200);
+				sounds["victory"].play();
 			}
+			// Special exit for the tutorial so the exit doens't redirect
 			else if (obj.type === "tutorialexit") {
 				playing = false;
-				console.log("victory");
-				setTimeout(function() { progressTutorial() }, 2000);
+				prisoner.sprite.visible = false;
+				setTimeout(function() { progressTutorial() }, 1200);
+				sounds["victory"].play();
 			}
 			// Check if the prisoner hit a guard
 			else if (obj.type === "guard") {
-				console.log("oops");
+				sounds["defeat"].play();
 				resetPrisoner();
 			}
 			// Check if the prisoner hit a turn around
@@ -404,6 +440,14 @@ function onDragStart(e)
 	this.dragging = !playing;
 }
 
+function musicHandler() {
+	if (!sounds.music1.playing && !sounds.music2.playing) {
+		musicToggle = !musicToggle
+		if (musicToggle) sounds.music1.play();
+		else sounds.music2.play();
+	}
+}
+
 function onDragEnd() {
 	this.dragging = false;
 	this.data = null;
@@ -417,15 +461,14 @@ function onDragMove () {
 		this.position.x = move.x - this.diffX;
 		this.position.y = move.y - this.diffY;
 
-		if (objects[currObj].type === "jumpfield" || objects[currObj].type === "stop") {
+		if (objects[currObj].type === "jumpfield" || objects[currObj].type === "turn") {
+			centerX = this.position.x + this.width/2;
+			centerY = this.position.y + this.height/2;
+			this.position.y = mapHeight - this.height;
 			for (obj in objects) {
 				o = objects[obj];
-				if (move.y <= o.sprite.position.y + o.sprite.height && move.x > o.sprite.position.x && move.x < o.sprite.position.x + o.sprite.width && !(o.draggable || o.type === "guard")) {
+				if (centerY <= o.sprite.position.y + o.sprite.height && centerX > o.sprite.position.x && centerX < o.sprite.position.x + o.sprite.width && !(o.draggable || o.type === "guard")) {
 					this.position.y = o.sprite.position.y - this.height;
-					break;
-				}
-				else {
-					this.position.y = mapHeight - this.height
 				}
 			}
 		}
@@ -445,6 +488,7 @@ function onDragMove () {
 
 function animate() {
 	requestAnimationFrame(animate);
+	musicHandler();
 	if (playing) {
 		updatePrisoner();
 		checkPrisonerCollision();
