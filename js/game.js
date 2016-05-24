@@ -89,7 +89,6 @@ function initGame() {
 
 	textures["wall"] = PIXI.Texture.fromFrame("wall.png");
 	textures["exit"] = PIXI.Texture.fromFrame("exit.png");
-	textures["exitClosed"] = PIXI.Texture.fromFrame("exit-closed.png");
 	textures["guard"] = PIXI.Texture.fromFrame("guard.png");
 	textures["guardFlipped"] = PIXI.Texture.fromFrame("guard-flipped.png");
 
@@ -113,6 +112,9 @@ function initGame() {
 
 	sounds["music1"] = PIXI.audioManager.getAudio("assets/music1.mp3");
 	sounds["music2"] = PIXI.audioManager.getAudio("assets/music2.mp3");
+
+	// Adjust volumes
+	sounds.paper.volume = .5;
 	sounds.music1.volume = musicVolume;
 	sounds.music2.volume = musicVolume;
 
@@ -418,7 +420,16 @@ function checkPrisonerCollision() {
 	}
 }
 
-// Functions used for moving 
+// Handles changing of music
+function musicHandler() {
+	if (!sounds.music1.playing && !sounds.music2.playing) {
+		musicToggle = !musicToggle
+		if (musicToggle) sounds.music1.play();
+		else sounds.music2.play();
+	}
+}
+
+// Functions for mouse movement 
 function onDragStart(e)
 {
 	// Get current object being dragged
@@ -439,20 +450,10 @@ function onDragStart(e)
 	this.data = e.data;
 	this.dragging = !playing;
 }
-
-function musicHandler() {
-	if (!sounds.music1.playing && !sounds.music2.playing) {
-		musicToggle = !musicToggle
-		if (musicToggle) sounds.music1.play();
-		else sounds.music2.play();
-	}
-}
-
 function onDragEnd() {
 	this.dragging = false;
 	this.data = null;
 }
-
 function onDragMove () {
 	if (this.dragging) {
 
@@ -486,6 +487,7 @@ function onDragMove () {
 	}
 }
 
+// Main game loop!
 function animate() {
 	requestAnimationFrame(animate);
 	musicHandler();

@@ -1,5 +1,6 @@
-// Y is actually how much up off of the ground excluding object height
-// As it stands screen 0 is level 1 but this should be changed later
+// A variable holding all of the screen data for each element on each page
+// Information can be reaccessed easily and repeatedly while still being dynamic
+// Many optimization improvements could and would be made around this sytem
 var screenLayouts = {
 	// Intro Page
 	0: {
@@ -14,9 +15,9 @@ var screenLayouts = {
 		},
 		"continue": {
 			"type": "text",
-			"x": 800,
+			"x": 660,
 			"y": 538,
-			"text": "click to continue",
+			"text": "click anywhere to continue",
 			"font": "30px Arial",
 			"align": "center",
 			"stroke": 5,
@@ -553,26 +554,6 @@ var screenLayouts = {
 			"type": "text",
 			"x": 195,
 			"y": 35,
-			"text": "Blaine: And here's a good 'ol fashion stop sign. These prisoners really respect the rules of the road so they will stop dead in their tracks the first time they hit this.",
-			"wordWrap": 480,
-			"font": "24px Arial",
-			"align": "center",
-			"color": "#000",
-			"conditional": "tutorialPhase === 9",
-		},
-		"turnhighlight": {
-			"type": "over",
-			"x": 790,
-			"y": 147,
-			"width": 80,
-			"height": 80,
-			"texture": "highlight",
-			"conditional": "tutorialPhase === 9",
-		},
-		"itemwords3": {
-			"type": "text",
-			"x": 195,
-			"y": 35,
 			"text": "Blaine: Next we have the classic wet floor sign. This sign will infuriate the prisoner so much that they turn around after knocking the poor sign over.",
 			"wordWrap": 480,
 			"font": "24px Arial",
@@ -580,23 +561,34 @@ var screenLayouts = {
 			"color": "#000",
 			"conditional": "tutorialPhase === 8",
 		},
-		"stophighlight": {
+		"turnhighlight": {
 			"type": "over",
-			"x": 790,
+			"x": 802,
 			"y": 75,
 			"width": 48,
 			"height": 72,
 			"texture": "highlight",
 			"conditional": "tutorialPhase === 8",
 		},
-		"spothighlight": {
+		"itemwords3": {
+			"type": "text",
+			"x": 195,
+			"y": 35,
+			"text": "Blaine: And here's a good 'ol fashion stop sign. These prisoners really respect the rules of the road so they will stop dead in their tracks the first time they hit this.",
+			"wordWrap": 480,
+			"font": "24px Arial",
+			"align": "center",
+			"color": "#000",
+			"conditional": "tutorialPhase === 9",
+		},
+		"stophighlight": {
 			"type": "over",
-			"x": 300,
-			"y": 526,
-			"width": 75,
-			"height": 50,
+			"x": 782,
+			"y": 147,
+			"width": 80,
+			"height": 80,
 			"texture": "highlight",
-			"conditional": "tutorialPhase === 12",
+			"conditional": "tutorialPhase === 9",
 		},
 		"buttonshighlight": {
 			"type": "over",
@@ -647,6 +639,15 @@ var screenLayouts = {
 			"font": "24px Arial",
 			"align": "center",
 			"color": "#000",
+			"conditional": "tutorialPhase === 12",
+		},
+		"spothighlight": {
+			"type": "over",
+			"x": 300,
+			"y": 526,
+			"width": 75,
+			"height": 50,
+			"texture": "highlight",
 			"conditional": "tutorialPhase === 12",
 		},
 		"tutorialwords2": {
@@ -714,7 +715,7 @@ var screenLayouts = {
 		},
 		"mainmenutext": {
 			"type": "text",
-			"x": 300,
+			"x": 285,
 			"y": 480,
 			"text": "Select a prisoner to free.",
 			"stroke": 5,
